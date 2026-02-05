@@ -1,0 +1,16 @@
+name: Verificación de Código
+
+on:
+  workflow_dispatch: # Ejecución manual
+
+jobs:
+  shellcheck:
+    name: Estado del Repositorio
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: sudo apt-get install -y shellcheck
+      - name: Run ShellCheck
+        run: |
+          find . -path "./kitty" -prune -o -type f -name "*.sh" -print0 | xargs -0 shellcheck
