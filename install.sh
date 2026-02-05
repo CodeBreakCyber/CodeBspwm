@@ -730,6 +730,98 @@ setup_login_theme() {
 }
 
 #==============================================================================
+# PERSONALIZACIÓN DE BOOT (Agregado v2.2)
+#==============================================================================
+
+setup_boot_customization() {
+    print_section "PERSONALIZACIÓN DE ARRANQUE (BOOT)"
+    
+    print_info "¿Deseas aplicar la Personalización Visual del Arranque? (Plymouth Glitch + GRUB Tela + Sonido)"
+    read -p "$(echo -e "${ARROW} (S/n): ")" -n 1 -r
+    echo ""
+    if [[ ! "$REPLY" =~ ^[Nn]$ ]]; then
+        
+        # 1. Plymouth (Animación de carga)
+        print_step "Instalando temas de Plymouth..."
+        sudo apt install -y plymouth plymouth-themes
+        
+        # Clonar temas de adi1090x
+        if [ ! -d "/usr/share/plymouth/themes/adi1090x-pack" ]; then 
+            mkdir -p ~/github
+            git clone https://github.com/adi1090x/plymouth-themes.git ~/github/plymouth-themes
+            sudo cp -r ~/github/plymouth-themes/pack_3/* /usr/share/plymouth/themes/
+            # Seleccionar tema 'glitch' (o 'abstract_ring_alt' como alternativa)
+            sudo plymouth-set-default-theme -R glitch || print_warning "No se pudo establecer el tema glitch automáticamente"
+        fi
+        print_success "Plymouth configurado"
+
+        # 2. GRUB Theme (Menú visual)
+        print_step "Instalando tema visual para GRUB..."
+        if [ ! -d "/tmp/grub2-themes" ]; then
+            git clone https://github.com/vinceliuice/grub2-themes.git /tmp/grub2-themes
+            cd /tmp/grub2-themes
+            sudo ./install.sh -t tela -s 1080p -b
+        fi
+        print_success "Tema GRUB instalado"
+
+        # 3. Sonido de Arranque
+        print_step "Configurando sonido de arranque..."
+        sudo apt install -y mpv
+        
+        # Script
+        sudo tee /usr/local/bin/startup-sound.sh > /dev/null << 'EOF'
+#!/bin/bash
+SOUND_DIR="$HOME/.config/sound"
+AUDIO_FILE=""
+if [ -f "$SOUND_DIR/startup.mp3" ]; then AUDIO_FILE="$SOUND_DIR/startup.mp3"; 
+elif [ -f "$SOUND_DIR/startup.wav" ]; then AUDIO_FILE="$SOUND_DIR/startup.wav"; fi
+
+if [ -n "$AUDIO_FILE" ] && command -v mpv &>/dev/null; then
+    mpv --no-video "$AUDIO_FILE" &
+fi
+exit 0
+EOF
+        sudo chmod +x /usr/local/bin/startup-sound.sh
+        
+        # Service
+        sudo tee /etc/systemd/system/startup-sound.service > /dev/null << EOF
+[Unit]
+Description=Startup Sound
+After=graphical.target
+
+[Service]
+Type=oneshot
+User=$USER
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/$USER/.Xauthority
+ExecStart=/usr/local/bin/startup-sound.sh
+
+[Install]
+WantedBy=graphical.target
+EOF
+        sudo systemctl enable startup-sound.service
+        mkdir -p ~/.config/sound
+        print_success "Servicio de sonido configurado (Coloca tu archivo en ~/.config/sound/startup.mp3)"
+
+        # 4. Configurar /etc/default/grub
+        print_step "Ajustando configuración de GRUB..."
+        sudo sed -i 's/GRUB_TIMEOUT=0/GRUB_TIMEOUT=10/' /etc/default/grub
+        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
+        # Asegurar OS-Prober
+        if grep -q "GRUB_DISABLE_OS_PROBER" /etc/default/grub; then
+             sudo sed -i 's/GRUB_DISABLE_OS_PROBER=true/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub
+        else
+             echo "GRUB_DISABLE_OS_PROBER=false" | sudo tee -a /etc/default/grub
+        fi
+        sudo update-grub
+        print_success "GRUB actualizado (TIMEOUT=10s)"
+        
+    else
+        print_info "Personalización de Boot omitida"
+    fi
+}
+
+#==============================================================================
 # FUNCIÓN PRINCIPAL
 #==============================================================================
 
@@ -798,8 +890,13 @@ main() {
     print_success "Atajos de sxhkd corregidos"
     
     set_permissions
+    
+    # Personalización de Boot (v2.2)
+    setup_boot_customization
+    
     setup_i3lock
     
+    print_section "INSTALACIÓN COMPLETADA"
     # Configurar permisos de nuevos módulos
     print_step "Configurando permisos de nuevos módulos..."
     chmod +x ~/.config/bin/memory_module.sh
