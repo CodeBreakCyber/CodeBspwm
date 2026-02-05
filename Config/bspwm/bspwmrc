@@ -69,8 +69,8 @@ bspc config focus_follows_pointer true
 bspc config pointer_modifier mod4
 # Acciones: move = Mover (desacopla automáticamente si es tiled), resize_side/corner
 bspc config pointer_action1 move
-bspc config pointer_action2 resize_side
-bspc config pointer_action3 resize_corner
+bspc config pointer_action2 resize_corner
+bspc config pointer_action3 none
 # Intervalo para fluidez
 bspc config pointer_motion_interval 10
 

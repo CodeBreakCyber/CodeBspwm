@@ -119,13 +119,20 @@ super + ctrl + alt + space
 # MOVER/REDIMENSIONAR
 #==============================================================================
 
-# Mover ventana (Híbrido: Swap o Auto-Float si no puede swap)
-super + {Left,Down,Up,Right}
-	$HOME/.config/bspwm/scripts/move_win.sh {west,south,north,east}
+# Mover ventana (Conflictivo eliminado - Use Swap Super+Shift+Flechas)
 
 # Redimensionar ventana (script personalizado)
 super + alt + {Left,Down,Up,Right}
 	~/.config/bspwm/scripts/bspwm_resize {west,south,north,east}
+
+# Alternar modo flotante con CUALQUIER botón del ratón (Click + Super)
+# Esto "despega" la ventana para poder arrastrarla
+super + {button1,button2,button3}
+	bspc node pointer -t ~floating
+
+# Alternativa Teclado (Limpio)
+super + n
+	bspc node focused -t ~floating
 
 #==============================================================================
 # APLICACIONES
