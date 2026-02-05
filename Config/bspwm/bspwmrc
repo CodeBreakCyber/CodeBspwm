@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+#==============================================================================
+# KaliBspwm - BSPWM Configuration (Fixed Mouse Drag)
+#==============================================================================
+
+#==============================================================================
+# TEMA EVERBLUSH - COLORES
+#==============================================================================
+export BACKGROUND="#141b1e"
+export FOREGROUND="#dadada"
+export BLACK="#232a2d"
+export RED="#e57474"
+export GREEN="#8ccf7e"
+export YELLOW="#e5c76b"
+export BLUE="#67b0e8"
+export MAGENTA="#c47fd5"
+export CYAN="#6cbfbf"
+export WHITE="#b3b9b8"
+
+#==============================================================================
+# AUTOSTART
+#==============================================================================
+wmname LG3D &
+vmware-user-suid-wrapper &>/dev/null || true
+
+# Matar daemons molestos
+killall -q xfce4-notifyd notify-osd dunst mako nm-applet blueman-applet xfce4-power-manager gnome-power-manager mate-power-manager xfce4-volumed volumeicon pasystray pnmixer xfsettingsd gsd-xsettings gsd-media-keys gsd-power light-locker gnome-screensaver mate-screensaver || true
+
+# Iniciar componentes clave
+killall -q sxhkd
+sleep 0.5
+sxhkd &
+
+picom &
+dunst -config ~/.config/dunst/dunstrc &
+[ -f ~/.fehbg ] && ~/.fehbg &
+nm-applet &
+~/.config/polybar/launch.sh &
+xsetroot -cursor_name left_ptr &
+
+# Prioridad ALTA para procesos de interfaz (Fluidez Extrema)
+# Esto evita que el sistema se sienta lento bajo carga pesada
+(sleep 3 && renice -n -10 -p $(pgrep -x bspwm) $(pgrep -x sxhkd) $(pgrep -x picom) $(pgrep -x polybar) &>/dev/null) &
+
+#==============================================================================
+# MONITORES Y CONFIGURACIÓN
+#==============================================================================
+bspc monitor -d I II III IV V VI VII VIII IX X
+
+bspc config border_width         2
+bspc config window_gap           12
+bspc config split_ratio          0.52
+
+bspc config focused_border_color  "$BLUE"
+bspc config normal_border_color   "$BLACK"
+bspc config active_border_color   "$MAGENTA"
+bspc config presel_feedback_color "$GREEN"
+
+bspc config borderless_monocle    true
+bspc config gapless_monocle       true
+bspc config paddingless_monocle   true
+bspc config single_monocle        false
+bspc config focus_follows_pointer true
+
+#==============================================================================
+# RATÓN (CRÍTICO: Habilitar Arrastre/Desacople)
+#==============================================================================
+# mod4 = Super Key
+bspc config pointer_modifier mod4
+# Acciones: move = Mover (desacopla automáticamente si es tiled), resize_side/corner
+bspc config pointer_action1 move
+bspc config pointer_action2 resize_side
+bspc config pointer_action3 resize_corner
+# Intervalo para fluidez
+bspc config pointer_motion_interval 10
+
+#==============================================================================
+# REGLAS
+#==============================================================================
+bspc rule -a Lxappearance state=floating center=true
+bspc rule -a Pavucontrol state=floating center=true
+bspc rule -a Nm-connection-editor state=floating center=true
+bspc rule -a kitty follow=on
+bspc rule -a Alacritty follow=on
+bspc rule -a Thunar follow=on
+bspc rule -a Pcmanfm follow=on
+bspc rule -a feh state=floating center=true
+bspc rule -a Sxiv state=floating center=true
+bspc rule -a Xfce4-notifyd state=floating center=true
+bspc rule -a Dunst state=floating center=true
+bspc rule -a Gimp desktop='^8' state=floating follow=on
+bspc rule -a Chromium desktop='^2'
+bspc rule -a mplayer2 state=floating
+bspc rule -a Kupfer.py focus=on
+bspc rule -a Screenkey manage=off
+bspc rule -a burp-StartBurp state=floating
+bspc rule -a Caido state=floating
