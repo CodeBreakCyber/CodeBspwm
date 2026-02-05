@@ -1,0 +1,31 @@
+# System Artifacts
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Editor Directories
+.vscode/
+.idea/
+.vim/
+
+# Build Artifacts & Dependencies
+build/
+*.o
+*.out
+
+# Cloned Repositories (install sources)
+/picom/
+/polybar/
+
+*/src/
+
+# Kitty Session/Lib (Excluded from repo)
+Config/kitty/lib/
+Config/kitty/session/
+
+# Local Environment
+.env
+*.deb
