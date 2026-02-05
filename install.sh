@@ -801,7 +801,7 @@ WantedBy=graphical.target
 EOF
         sudo systemctl enable startup-sound.service
         mkdir -p ~/.config/sound
-        print_success "Servicio de sonido configurado (Coloca tu archivo en ~/.config/sound/startup.mp3)"
+        print_success "Servicio de sonido instalado y activado (Audio incluido)"
 
         # 4. Configurar /etc/default/grub
         print_step "Ajustando configuración de GRUB..."
