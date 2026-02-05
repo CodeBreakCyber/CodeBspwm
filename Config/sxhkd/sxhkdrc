@@ -1,0 +1,228 @@
+#==============================================================================
+# KaliBspwm - SXHKD Configuration
+# Descripción: Atajos de teclado para BSPWM
+# Autor: CodeBreak
+#==============================================================================
+
+#==============================================================================
+# ATAJOS INDEPENDIENTES DEL WM
+#==============================================================================
+
+# Terminal (Kitty)
+super + Return
+	kitty
+
+# Lanzador de aplicaciones (Rofi)
+super + d
+	~/.config/polybar/scripts/launcher.sh
+
+# Bloqueo de pantalla (Sincronizado con Blur)
+super + l
+	~/.config/bin/lock.sh
+
+# Recargar configuración de SXHKD
+super + Escape
+	pkill -USR1 -x sxhkd
+
+#==============================================================================
+# ATAJOS DE BSPWM
+#==============================================================================
+
+# Salir/Reiniciar BSPWM
+super + alt + {q,r}
+	bspc {quit,wm -r}
+
+# Cerrar/Matar ventana
+super + {_,shift + }w
+	bspc node -{c,k}
+
+# Alternar entre tiled y monocle
+super + space
+	bspc desktop -l next
+
+# Intercambiar con la ventana más grande
+super + g
+	bspc node -s biggest.window
+
+#==============================================================================
+# ESTADOS Y FLAGS DE VENTANA
+#==============================================================================
+
+# Estado de ventana: tiled, pseudo_tiled, floating, fullscreen
+super + {t,shift + t,s,f}
+	bspc node -t {tiled,pseudo_tiled,floating,fullscreen}
+
+# Flags: marked, locked, sticky, private
+super + ctrl + {m,x,y,z}
+	bspc node -g {marked,locked,sticky,private}
+
+#==============================================================================
+# FOCUS Y SWAP
+#==============================================================================
+
+# Focus en dirección
+# Focus en dirección
+super + {Left,Down,Up,Right}
+	bspc node -f {west,south,north,east}
+
+# Swap (Mover) en dirección horizontal
+super + shift + {Left,Right}
+	bspc node -s {west,east}
+
+# Focus en path jump
+super + {p,b,comma,period}
+	bspc node -f @{parent,brother,first,second}
+
+# Focus siguiente/anterior ventana en desktop actual (Cambiado a 'v' para evitar conflicto con Caido 'c')
+super + {_,shift + }v
+	bspc node -f {next,prev}.local.!hidden.window
+
+# Focus siguiente/anterior desktop
+super + bracket{left,right}
+	bspc desktop -f {prev,next}.local
+
+# Focus último nodo/desktop
+super + {grave,Tab}
+	bspc {node,desktop} -f last
+
+# Focus nodo más antiguo/nuevo en historial
+super + {o,i}
+	bspc wm -h off; \
+	bspc node {older,newer} -f; \
+	bspc wm -h on
+
+# Focus o enviar a desktop específico
+super + {_,shift + }{1-9,0}
+	bspc {desktop -f,node -d} '^{1-9,10}'
+
+#==============================================================================
+# PRESELECCIÓN
+#==============================================================================
+
+# Preseleccionar dirección
+super + ctrl + alt + {Left,Down,Up,Right}
+	bspc node -p {west,south,north,east}
+
+# Preseleccionar ratio
+super + ctrl + {1-9}
+	bspc node -o 0.{1-9}
+
+# Cancelar preselección del nodo
+super + ctrl + space
+	bspc node -p cancel
+
+# Cancelar preselección del desktop
+super + ctrl + alt + space
+	bspc query -N -d | xargs -I id -n 1 bspc node id -p cancel
+
+#==============================================================================
+# MOVER/REDIMENSIONAR
+#==============================================================================
+
+# Mover ventana (Híbrido: Swap o Auto-Float si no puede swap)
+super + {Left,Down,Up,Right}
+	$HOME/.config/bspwm/scripts/move_win.sh {west,south,north,east}
+
+# Redimensionar ventana (script personalizado)
+super + alt + {Left,Down,Up,Right}
+	~/.config/bspwm/scripts/bspwm_resize {west,south,north,east}
+
+#==============================================================================
+# APLICACIONES
+#==============================================================================
+
+# Firefox
+super + shift + f
+	firefox &
+
+# Caido (Proxy)
+super + shift + c
+	caido &
+
+# Burp Suite Professional
+super + shift + b
+	(burpsuite-pro 2>/dev/null || burpsuite) &
+
+#==============================================================================
+# CAPTURAS DE PANTALLA
+#==============================================================================
+
+# Captura selección
+@Print
+	screenshot select
+
+# Captura pantalla completa
+ctrl + @Print
+	screenshot
+
+# Captura ventana activa
+alt + @Print
+	screenshot window
+
+#==============================================================================
+# CONTROL DE VOLUMEN
+#==============================================================================
+
+# Subir volumen
+XF86AudioRaiseVolume
+	pactl set-sink-volume @DEFAULT_SINK@ +5%
+
+# Bajar volumen
+XF86AudioLowerVolume
+	pactl set-sink-volume @DEFAULT_SINK@ -5%
+
+# Mutear/Desmutear
+XF86AudioMute
+	pactl set-sink-mute @DEFAULT_SINK@ toggle
+
+# Alternativas (teclados sin teclas multimedia) - Único bloque para volumen, evitando duplicados
+super + ctrl + {plus,minus}
+	pactl set-sink-volume @DEFAULT_SINK@ {+5%,-5%}
+
+#==============================================================================
+# CONTROL DE BRILLO (Laptops)
+#==============================================================================
+
+# Subir brillo
+XF86MonBrightnessUp
+	brightnessctl set +10%
+
+# Bajar brillo
+XF86MonBrightnessDown
+	brightnessctl set 10%-
+
+# Alternativas
+super + shift + {plus,minus}
+	brightnessctl set {+10%,10%-}
+
+#==============================================================================
+# MENÚ DE ENERGÍA
+#==============================================================================
+
+# Power menu (apagar, reiniciar, etc)
+super + shift + e
+	~/.config/polybar/scripts/powermenu.sh
+
+# Change Wallpaper (Random)
+super + alt + w
+	~/.config/bin/wallpaper_changer.sh
+
+
+#==============================================================================
+# WINDOWS 11 STYLE SNAP LAYOUTS (Agregado por CodeBreak)
+#==============================================================================
+
+# Snap Izquierda/Derecha (Mover a la dirección y ajustar)
+super + alt + Left
+	bspc node -v -20 0; bspc node -s west
+
+super + alt + Right
+	bspc node -v 20 0; bspc node -s east
+
+# Minimizar (Ocultar ventana)
+super + shift + Down
+	bspc node -g hidden=on
+
+# Restaurar última ventana minimizada (Global)
+super + shift + Up
+	id=$(bspc query -N -n .hidden | tail -n1); [ -n "$id" ] && bspc node "$id" -g hidden=off -f
