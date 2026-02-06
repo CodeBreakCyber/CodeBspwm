@@ -746,21 +746,31 @@ setup_boot_customization() {
         sudo apt install -y plymouth plymouth-themes
         
         # Clonar temas de adi1090x
-        if [ ! -d "/usr/share/plymouth/themes/adi1090x-pack" ]; then 
+        if [ ! -d "/usr/share/plymouth/themes/glitch" ]; then 
             mkdir -p ~/github
-            git clone https://github.com/adi1090x/plymouth-themes.git ~/github/plymouth-themes
-            sudo cp -r ~/github/plymouth-themes/pack_3/* /usr/share/plymouth/themes/
-            # Seleccionar tema 'glitch' (o 'abstract_ring_alt' como alternativa)
+            if [ ! -d ~/github/plymouth-themes ]; then
+                git clone https://github.com/adi1090x/plymouth-themes.git ~/github/plymouth-themes
+            fi
+            sudo cp -r ~/github/plymouth-themes/pack_2/glitch /usr/share/plymouth/themes/
             sudo plymouth-set-default-theme -R glitch || print_warning "No se pudo establecer el tema glitch automáticamente"
+        else
+            print_info "Tema Plymouth Glitch ya instalado, omitiendo..."
+            sudo plymouth-set-default-theme -R glitch 2>/dev/null || true
         fi
         print_success "Plymouth configurado"
 
         # 2. GRUB Theme (Menú visual)
         print_step "Instalando tema visual para GRUB..."
-        if [ ! -d "/tmp/grub2-themes" ]; then
-            git clone https://github.com/vinceliuice/grub2-themes.git /tmp/grub2-themes
-            cd /tmp/grub2-themes
+        if [ ! -d "/boot/grub/themes/tela" ]; then
+            mkdir -p ~/github
+            if [ ! -d ~/github/grub2-themes ]; then
+                git clone https://github.com/vinceliuice/grub2-themes.git ~/github/grub2-themes
+            fi
+            cd ~/github/grub2-themes
             sudo ./install.sh -t tela -s 1080p -b
+            cd "$INSTALL_DIR"
+        else
+            print_info "Tema GRUB Tela ya instalado, omitiendo..."
         fi
         print_success "Tema GRUB instalado"
 
@@ -768,45 +778,31 @@ setup_boot_customization() {
         print_step "Configurando sonido de arranque..."
         sudo apt install -y mpv
         
-        # Script
-        sudo tee /usr/local/bin/startup-sound.sh > /dev/null << 'EOF'
-#!/bin/bash
-SOUND_DIR="$HOME/.config/sound"
-AUDIO_FILE=""
-if [ -f "$SOUND_DIR/startup.mp3" ]; then AUDIO_FILE="$SOUND_DIR/startup.mp3"; 
-elif [ -f "$SOUND_DIR/startup.wav" ]; then AUDIO_FILE="$SOUND_DIR/startup.wav"; fi
-
-if [ -n "$AUDIO_FILE" ] && command -v mpv &>/dev/null; then
-    mpv --no-video "$AUDIO_FILE" &
-fi
-exit 0
-EOF
+        # Copiar script desde el repositorio
+        sudo cp "$INSTALL_DIR/scripts/startup-sound.sh" /usr/local/bin/startup-sound.sh
         sudo chmod +x /usr/local/bin/startup-sound.sh
         
-        # Service
-        sudo tee /etc/systemd/system/startup-sound.service > /dev/null << EOF
-[Unit]
-Description=Startup Sound
-After=graphical.target
-
-[Service]
-Type=oneshot
-User=$USER
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/$USER/.Xauthority
-ExecStart=/usr/local/bin/startup-sound.sh
-
-[Install]
-WantedBy=graphical.target
-EOF
+        # Crear servicio systemd desde template
+        sed "s/USER_PLACEHOLDER/$USER/g" "$INSTALL_DIR/scripts/startup-sound.service.template" | \
+            sudo tee /etc/systemd/system/startup-sound.service > /dev/null
+        
         sudo systemctl enable startup-sound.service
         mkdir -p ~/.config/sound
-        print_success "Servicio de sonido instalado y activado (Audio incluido)"
+        print_success "Servicio de sonido instalado y activado"
 
         # 4. Configurar /etc/default/grub
         print_step "Ajustando configuración de GRUB..."
         sudo sed -i 's/GRUB_TIMEOUT=0/GRUB_TIMEOUT=10/' /etc/default/grub
-        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
+        # Boot silencioso extremo
+        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=0 rd.systemd.show_status=false vt.global_cursor_default=0"/' /etc/default/grub
+        
+        # Evitar glitches visuales (Menú directo)
+        if grep -q "GRUB_TIMEOUT_STYLE" /etc/default/grub; then
+            sudo sed -i 's/GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=menu/' /etc/default/grub
+        else
+            echo "GRUB_TIMEOUT_STYLE=menu" | sudo tee -a /etc/default/grub
+        fi
+        echo "GRUB_GFXPAYLOAD_LINUX=keep" | sudo tee -a /etc/default/grub
         # Asegurar OS-Prober
         if grep -q "GRUB_DISABLE_OS_PROBER" /etc/default/grub; then
              sudo sed -i 's/GRUB_DISABLE_OS_PROBER=true/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub

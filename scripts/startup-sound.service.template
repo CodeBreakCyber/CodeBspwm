@@ -1,0 +1,13 @@
+[Unit]
+Description=Startup Sound
+After=graphical.target
+
+[Service]
+Type=oneshot
+User=USER_PLACEHOLDER
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/USER_PLACEHOLDER/.Xauthority
+ExecStart=/usr/local/bin/startup-sound.sh
+
+[Install]
+WantedBy=graphical.target
